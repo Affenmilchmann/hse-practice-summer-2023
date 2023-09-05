@@ -1,14 +1,13 @@
 JOURNAL_NAME = "LANGUAGE"
 JOURNAL_LINK = "https://muse.jhu.edu/journal/112"
 JOURNAL_DOMAIN = "https://muse.jhu.edu"
-DELAY_MIN, DELAY_MAX = 2, 4 # wait for randint(REQUEST_DELAY) seconds
+DELAY_MIN, DELAY_MAX = 2, 4 # wait for randint(DELAY_MIN, DELAY_MAX) seconds
 
 from typing import List, Dict
 from requests import get
 from pprint import pprint
 import logging
 import re
-
 if __name__ == "__main__":
     from utils import *
 else:
@@ -17,10 +16,6 @@ else:
 logger = logging.getLogger(__name__)
 CSV_FILE = get_csv_name(JOURNAL_NAME)
 
-# faking user agent since 
-headers = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36'
-}
 
 def get_volumes_links() -> List[str]:
     logger.debug(f"Parsing volumes links. Journal: {JOURNAL_NAME}; link: {JOURNAL_LINK}")
@@ -33,7 +28,6 @@ def get_volumes_links() -> List[str]:
     return all_links
 
 def parse_volume(link) -> List[str]:
-    logger.debug(f"Parsing volume's articles. Link: {link}")
     bs = parse_link(link, fake_agent=True)
 
     # getting containers of every article
@@ -47,24 +41,24 @@ def parse_volume(link) -> List[str]:
     # filtering hrefs. Target link format example: "/pub/24/article/452307/summary"
     all_links = filter(lambda x: x and re.match(r'.*/article/.*', x), all_links)
     all_links = [ JOURNAL_DOMAIN + x for x in all_links ]
-    logger.info(f"Retrieved {len(all_links)} article links from '{title}'.")
 
-    return all_links
+    return all_links, title
 
-def get_all_papers_links() -> List[str]:
-    papers_links = []
+def get_all_articles_links() -> List[str]:
+    articles_links = []
     volumes_links = get_volumes_links()
     
-    for vol in volumes_links[:1]:
-        papers_links += parse_volume(vol)
+    for i, vol in enumerate(volumes_links):
+        logger.debug(f"Parsing volume's articles. Link: {vol}")
+        new_links, title = parse_volume(vol)
+        articles_links += new_links
+        logger.info(f"[{i+1}/{len(volumes_links)}] Retrieved {len(new_links)} article links from '{title}'. ({len(articles_links)} total links)")
         random_sleep(DELAY_MIN, DELAY_MAX)
 
-    pprint(papers_links)
-    logger.info(f"Retrieved {len(papers_links)} paper links ({len(set(papers_links))} are unique)")
-    return list(set(papers_links))
+    logger.info(f"Retrieved {len(articles_links)} articles links ({len(set(articles_links))} are unique)")
+    return list(set(articles_links))
 
-def parse_paper(link) -> Dict:
-    logger.info(f"Parsing paper {link}")
+def parse_article(link) -> Dict:
     bs = parse_link(link, fake_agent=True)
 
     authors_containers = bs.find_all('meta', attrs={'name':'citation_author'})
@@ -85,12 +79,18 @@ def parse_paper(link) -> Dict:
         'journal':  JOURNAL_NAME
     }
 
-def parsed_papers() -> Dict:
-    paper_links = get_all_papers_links()
-    for l in paper_links:
-        parsed_data = parse_paper(l)
+def parsed_articles() -> Dict:
+    article_links = get_all_articles_links()
+    for i, l in enumerate(article_links):
+        logger.info(f"[{i+1}/{len(article_links)}] Parsing article {l}")
 
-        add_to_csv(CSV_FILE, parsed_data)
+        try:
+            parsed_data = parse_article(l)
+            add_to_csv(CSV_FILE, parsed_data)
+        except Exception as e:
+            logger.exception(f"Exception occurred while parsing articles {l}: {e}")
+            parsed_data = None
+            continue
+
         yield parsed_data
-        
         random_sleep(DELAY_MIN, DELAY_MAX)
