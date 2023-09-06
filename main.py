@@ -1,5 +1,4 @@
 import logging
-from pprint import pprint
 logging.basicConfig(filename='main.log', level=logging.INFO)
 logging.getLogger().setLevel(logging.INFO)
 

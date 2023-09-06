@@ -1,5 +1,5 @@
 from time import sleep
-from random import randint
+from random import random
 from requests import get
 import pandas as pd
 import logging
@@ -10,8 +10,9 @@ logger = logging.getLogger(__name__)
 
 def random_sleep(bottom: int, top: int) -> None:
     """Does nothing for random amount of seconds between range[0] and range[1] both points included"""
-    amount = randint(bottom, top)
-    logger.info(f"Sleeping for {amount} sec...")
+    r = random()
+    amount = bottom + r * (top - bottom)
+    logger.info(f"Sleeping for {round(amount, 1)} sec...")
     sleep(amount)
 
 def parse_link(link, fake_agent=False) -> BeautifulSoup:

@@ -1,11 +1,9 @@
 JOURNAL_NAME = "LANGUAGE"
 JOURNAL_LINK = "https://muse.jhu.edu/journal/112"
 JOURNAL_DOMAIN = "https://muse.jhu.edu"
-DELAY_MIN, DELAY_MAX = 2, 4 # wait for randint(DELAY_MIN, DELAY_MAX) seconds
+DELAY_MIN, DELAY_MAX = 1, 2 # wait for randint(DELAY_MIN, DELAY_MAX) seconds
 
 from typing import List, Dict
-from requests import get
-from pprint import pprint
 import logging
 import re
 if __name__ == "__main__":
@@ -14,6 +12,7 @@ else:
     from .utils import *
 
 logger = logging.getLogger(__name__)
+logging.basicConfig(filename=f'journals/log/{JOURNAL_NAME.lower()}.log', level=logging.INFO)
 CSV_FILE = get_csv_name(JOURNAL_NAME)
 
 
@@ -79,7 +78,7 @@ def parse_article(link) -> Dict:
         'journal':  JOURNAL_NAME
     }
 
-def parsed_articles() -> Dict:
+def parse():
     article_links = get_all_articles_links()
     for i, l in enumerate(article_links):
         logger.info(f"[{i+1}/{len(article_links)}] Parsing article {l}")
@@ -92,5 +91,4 @@ def parsed_articles() -> Dict:
             parsed_data = None
             continue
 
-        yield parsed_data
         random_sleep(DELAY_MIN, DELAY_MAX)
