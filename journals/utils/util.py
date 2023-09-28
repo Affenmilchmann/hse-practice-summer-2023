@@ -20,7 +20,11 @@ def parse_link(link, fake_agent=False) -> BeautifulSoup:
     if fake_agent:
         headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36'
     
-    page_html = get(link, headers=headers).text
+    response = get(link, headers=headers)
+    page_html = response.text
+
+    if response.status_code != 200:
+        return response.status_code
 
     return BeautifulSoup(page_html, features="html.parser")
 

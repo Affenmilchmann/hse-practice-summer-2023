@@ -29,7 +29,7 @@ def parse_issue(link) -> List[str]:
     article_headings = bs.find_all('h3', class_='c-card__title')
     return list(set([ x.find('a').get('href') for x in article_headings ]))
 
-def parse_article(link) -> List[str]:
+def parse_article(link) -> Dict:
     bs = parse_link(link)
 
     authors_containers = bs.find_all('meta', attrs={'name':'citation_author'})
